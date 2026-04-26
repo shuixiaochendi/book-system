@@ -95,7 +95,7 @@ public class BookController {
      * @param ids 要删除的图书ID列表
      * @return 删除结果
      */
-    @DeleteMapping("/batch")
+    @DeleteMapping("/batch1")
     public ResponseEntity<Map<String, Object>> batchDeleteBooks(@RequestBody List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             Map<String, Object> result = new HashMap<>();
