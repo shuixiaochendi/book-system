@@ -28,7 +28,7 @@ public class BookController {
         Page<Book> page = bookService.getBooksByPage(pageNum, pageSize, keyword);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("code", 200);
+        result.put("code", 2009);
         result.put("message", "success");
         result.put("data", page.getRecords());
         result.put("total", page.getTotal());
