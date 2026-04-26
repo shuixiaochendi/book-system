@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/books1")
+@RequestMapping("/api/books12")
 @CrossOrigin(origins = "*")
 public class BookController {
 
