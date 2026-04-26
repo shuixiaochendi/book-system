@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书管理系统</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #409EFF;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 500;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .search-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .form-dialog .el-input {
+            width: 100%;
+        }
+        .batch-delete-btn {
+            margin-left: 10px;
+        }
+        .selected-count {
+            margin-left: 10px;
+            color: #909399;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>📚 图书管理系统</h1>
+        </div>
+
+        <div class="container">
+            <div class="search-bar">
+                <el-row :gutter="20">
+                    <el-col :span="8">
+                        <el-input
+                            v-model="searchKeyword"
+                            placeholder="请输入图书名称或编号搜索"
+                            @keyup.enter.native="handleSearch"
+                            clearable>
+                            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+                        </el-input>
+                    </el-col>
+                    <el-col :span="4">
+                        <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
+                    </el-col>
+                    <el-col :span="12" style="text-align: right;">
+                        <el-button type="success" icon="el-icon-plus" @click="handleAdd">添加图书</el-button>
+                        <el-button
+                            type="danger"
+                            icon="el-icon-delete"
+                            :disabled="selectedBooks.length === 0"
+                            @click="handleBatchDelete">
+                            批量删除
+                        </el-button>
+                        <span v-if="selectedBooks.length > 0" class="selected-count">
+                            已选择 {{ selectedBooks.length }} 项
+                        </span>
+                    </el-col>
+                </el-row>
+            </div>
+
+            <div class="table-container">
+                <el-table
+                    :data="tableData"
+                    border
+                    stripe
+                    style="width: 100%"
+                    @selection-change="handleSelectionChange">
+                    <el-table-column type="selection" width="55" align="center"></el-table-column>
+                    <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
+                    <el-table-column prop="bookName" label="图书名称" min-width="200"></el-table-column>
+                    <el-table-column prop="bookNo" label="图书编号" width="150" align="center"></el-table-column>
+                    <el-table-column prop="remarks" label="备注信息" min-width="200"></el-table-column>
+                    <el-table-column prop="createdAt" label="创建时间" width="180" align="center">
+                        <template slot-scope="scope">
+                            {{ formatDate(scope.row.createdAt) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="200" align="center">
+                        <template slot-scope="scope">
+                            <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+                            <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <div class="pagination">
+                    <el-pagination
+                        @current-change="handlePageChange"
+                        @size-change="handleSizeChange"
+                        :current-page.sync="pagination.current"
+                        :page-size.sync="pagination.size"
+                        layout="total, prev, pager, next, jumper, sizes"
+                        :page-sizes="[10, 20, 50, 100]"
+                        :total="pagination.total">
+                    </el-pagination>
+                </div>
+            </div>
+        </div>
+
+        <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="500px" @close="resetForm">
+            <el-form :model="form" :rules="rules" ref="form" label-width="100px" class="form-dialog">
+                <el-form-item label="图书名称" prop="bookName">
+                    <el-input v-model="form.bookName" placeholder="请输入图书名称"></el-input>
+                </el-form-item>
+                <el-form-item label="图书编号" prop="bookNo">
+                    <el-input v-model="form.bookNo" placeholder="请输入图书编号"></el-input>
+                </el-form-item>
+                <el-form-item label="备注信息">
+                    <el-input v-model="form.remarks" type="textarea" :rows="3" placeholder="请输入备注信息"></el-input>
+                </el-form-item>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitForm">确定</el-button>
+            </span>
+        </el-dialog>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
